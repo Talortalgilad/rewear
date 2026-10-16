@@ -72,7 +72,11 @@ button { font-family: inherit; }
   .price-tag { clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%); }
 
   /* Notes pinned to the page */
-  .note-paper { background-color: #FFF8DF; background-image: repeating-linear-gradient(transparent, transparent 31px, #E6D9B2 31px, #E6D9B2 32px); }
+  /* Ruled note: every row is exactly 34px (line-height), the rule is drawn once per 34px tile at the
+     bottom, and --rule-y nudges it so the handwriting baseline sits on the line. No margins anywhere
+     inside, and the vertical padding is a multiple of 34px, so every text row lands on the grid. */
+  .note-paper { --row: 34px; --rule-y: -6px; font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 26px; line-height: 34px; white-space: pre-line; padding: 34px 16px 34px; background-color: #FFF8DF; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 33px, #DCCB9B 33px, #DCCB9B 34px); background-size: 100% 34px; background-position-y: var(--rule-y); }
+  .note-paper > * { margin: 0; padding: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

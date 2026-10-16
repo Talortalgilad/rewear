@@ -8,10 +8,10 @@ export function PaperNote({ text, from, pinned = false, tilt = -1.6, label }: { 
   return (
     <div className="relative px-2 pt-4" style={{ transform: `rotate(${tilt}deg)` }} data-testid="paper-note">
       {pinned ? <Pin className="absolute left-1/2 top-0 z-10 h-7 w-7 -translate-x-1/2" /> : <Tape className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rotate-[-3deg]" />}
-      <div className="note-paper border border-[#E6D9B2] px-4 pb-3 pt-5 shadow-soft">
-        {label && <div className="font-hand text-[26px] font-bold leading-8 text-ink-soft">{label}</div>}
-        <p className="font-hand text-[25px] font-bold leading-8 text-ink">{text}</p>
-        {from && <p className="mt-1 text-end font-hand text-[28px] font-bold leading-8 text-ink">— {from}</p>}
+      <div className="note-paper border border-[#E6D9B2] text-ink shadow-soft" data-testid="note-sheet">
+        {label && <div className="text-ink-soft" data-row>{label}</div>}
+        <p data-row>{text}</p>
+        {from && <p className="text-end" data-row>— {from}</p>}
       </div>
     </div>
   );
