@@ -30,7 +30,7 @@ export default function Toast() {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
-            className={`rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-soft ${kind === 'error' ? 'bg-bad' : 'bg-ink'}`}
+            className={`rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lift ${kind === 'error' ? 'bg-bad' : 'bg-ink'}`}
           >
             {msg}
           </motion.div>

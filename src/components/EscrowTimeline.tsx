@@ -1,16 +1,17 @@
-import { Check } from 'lucide-react';
+import { Banknote, CreditCard, Home, Lock, Package, Snowflake, Undo2, type LucideIcon } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { Order } from '../types';
 
 type StepState = 'done' | 'current' | 'future' | 'danger' | 'refund';
 
-const BASE = [
-  { emoji: '💳', label: 'שולם' },
-  { emoji: '🔒', label: 'בנאמנות' },
-  { emoji: '📦', label: 'נשלח' },
-  { emoji: '🏠', label: 'הגיע' },
-  { emoji: '💸', label: 'שוחרר למוכר' },
+const BASE: { Icon: LucideIcon; label: string }[] = [
+  { Icon: CreditCard, label: 'שולם' },
+  { Icon: Lock, label: 'בנאמנות' },
+  { Icon: Package, label: 'נשלח' },
+  { Icon: Home, label: 'הגיע' },
+  { Icon: Banknote, label: 'שוחרר למוכר' },
 ];
+const TILT = [-5, 3, -3, 4, -2];
 
 function states(status: Order['status']): StepState[] {
   switch (status) {
@@ -24,7 +25,7 @@ function states(status: Order['status']): StepState[] {
 }
 
 const currentText: Partial<Record<Order['status'], string>> = {
-  paid_escrow: 'הכסף מוחזק בנאמנות, ממתינים שהמוכר ישלח',
+  paid_escrow: 'הכסף מחכה במעטפה, ממתינים שהמוכר ישלח',
   shipped: 'החבילה בדרך לקונה',
   delivered: 'ממתין לאישור הקונה',
 };
@@ -37,56 +38,57 @@ const fmtTime = (at?: number) => {
   return today ? `היום ${t}` : `${d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' })} ${t}`;
 };
 
+const ink: Record<StepState, string> = { done: 'text-ok', current: 'text-primary-hover', future: 'text-gray-300', danger: 'text-bad', refund: 'text-kraft-dark' };
+
+// Each step is a small rubber stamp that gets pressed onto the page when it is completed.
 export default function EscrowTimeline({ order }: { order: Order }) {
   const reduce = useReducedMotion();
   const st = states(order.status);
   const at = (s: Order['status'][]) => [...order.timeline].reverse().find((e) => s.includes(e.status))?.at;
   const times = [at(['paid_escrow']), at(['paid_escrow']), at(['shipped']), at(['delivered']), at(['completed', 'disputed', 'refunded'])];
-  const labels = BASE.map((b, i) => {
+  const steps = BASE.map((b, i) => {
     if (i !== 4) return b;
-    if (order.status === 'disputed') return { emoji: '⚠️', label: 'הכסף מוקפא' };
-    if (order.status === 'refunded') return { emoji: '↩️', label: 'הוחזר לקונה' };
+    if (order.status === 'disputed') return { Icon: Snowflake, label: 'הכסף מוקפא' };
+    if (order.status === 'refunded') return { Icon: Undo2, label: 'הוחזר לקונה' };
     return b;
   });
 
   return (
-    <ol className="space-y-0" aria-label="ציר נאמנות">
-      {labels.map((step, i) => {
+    <ol aria-label="ציר נאמנות">
+      {steps.map(({ Icon, label }, i) => {
         const s = st[i];
         const next = st[i + 1];
         const lineFilled = next !== undefined && next !== 'future';
-        const dot =
-          s === 'done' ? 'bg-ok text-white' :
-          s === 'current' ? 'bg-escrow text-white' :
-          s === 'danger' ? 'bg-bad text-white' :
-          s === 'refund' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-400';
-        const ring = s === 'current' ? 'bg-escrow' : s === 'danger' ? 'bg-bad' : '';
-        const lineColor = next === 'danger' ? 'bg-bad' : next === 'refund' ? 'bg-blue-500' : 'bg-ok';
+        const lineColor = next === 'danger' ? 'border-bad' : next === 'refund' ? 'border-kraft-dark' : 'border-ok';
+        const stamped = s === 'done' || s === 'danger' || s === 'refund';
         return (
           <li key={i} className="flex gap-3" aria-current={s === 'current' ? 'step' : undefined}>
             <div className="flex flex-col items-center self-stretch">
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-                {ring && !reduce && <motion.span className={`absolute inset-0 rounded-full ${ring}`} animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 1.6, repeat: Infinity }} />}
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+                {s === 'current' && !reduce && <motion.span className="absolute inset-0 rounded-full border-2 border-primary" animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 1.7, repeat: Infinity }} />}
                 <motion.span
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-full text-base ${dot}`}
-                  initial={{ scale: 0.6 }} animate={!reduce && (s === 'current' || s === 'danger') ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-                  transition={!reduce && (s === 'current' || s === 'danger') ? { duration: 1.6, repeat: Infinity } : { type: 'spring', delay: i * 0.12 }}
+                  key={`${i}-${s}`}
+                  data-stamp={s}
+                  className={`stamp stamp-round h-11 w-11 items-center justify-center p-0 ${ink[s]} ${s === 'future' ? '!border-dashed' : ''} ${s === 'current' ? '!border-dashed' : ''}`}
+                  initial={stamped ? { scale: 1.45, rotate: TILT[i] - 16, opacity: 0 } : false}
+                  animate={{ scale: 1, rotate: TILT[i], opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 16, delay: reduce ? 0 : i * 0.1 }}
+                  style={s === 'current' || s === 'future' ? { WebkitMaskImage: 'none', maskImage: 'none' } : undefined}
                 >
-                  {s === 'done' ? <Check size={18} strokeWidth={3} aria-hidden /> : <span aria-hidden>{step.emoji}</span>}
+                  <Icon size={19} aria-hidden />
                 </motion.span>
               </div>
               {i < BASE.length - 1 && (
-                <div className="relative my-1 min-h-6 w-1 flex-1 overflow-hidden rounded-full bg-gray-200">
-                  <motion.div className={`absolute inset-x-0 top-0 h-full origin-top ${lineColor}`} initial={{ scaleY: 0 }} animate={{ scaleY: lineFilled ? 1 : 0 }} transition={{ duration: 0.6, delay: 0.2 + i * 0.15, ease: 'easeOut' }} />
+                <div className="relative my-1 min-h-6 w-0 flex-1 border-l-2 border-dashed border-gray-300">
+                  <motion.div className={`absolute -left-0.5 top-0 h-full origin-top border-l-2 border-dashed ${lineColor}`} initial={{ scaleY: 0 }} animate={{ scaleY: lineFilled ? 1 : 0 }} transition={{ duration: reduce ? 0 : 0.6, delay: 0.2 + i * 0.15, ease: 'easeOut' }} />
                 </div>
               )}
             </div>
-            <div className="pb-5 pt-1">
-              <div className={`font-bold ${s === 'future' ? 'text-gray-400' : s === 'danger' ? 'text-bad' : ''}`}>{step.label}</div>
+            <div className="pb-5 pt-1.5">
+              <div className={`font-display text-[17px] font-black ${s === 'future' ? 'text-ink-soft' : s === 'danger' ? 'text-bad' : ''}`}>{label}</div>
               {s !== 'future' && times[i] && <div className="text-xs text-ink-soft">{fmtTime(times[i])}</div>}
-              {s === 'current' && currentText[order.status] && <div className="mt-0.5 text-xs font-medium text-escrow-dark">{currentText[order.status]}</div>}
-              {s === 'danger' && <div className="mt-0.5 text-xs font-medium text-bad">התשלום מוקפא עד לבירור</div>}
-              {i === 2 && order.trackingNumber && s !== 'future' && <div className="text-xs text-ink-soft" dir="ltr">{order.trackingNumber}</div>}
+              {s === 'current' && currentText[order.status] && <div className="mt-0.5 text-xs font-bold text-primary-dark">{currentText[order.status]}</div>}
+              {s === 'danger' && <div className="mt-0.5 text-xs font-bold text-bad">התשלום מוקפא עד לבירור</div>}
             </div>
           </li>
         );

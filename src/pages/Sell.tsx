@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ImagePlus, Lightbulb, Loader2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
@@ -7,6 +7,7 @@ import { compressImage } from '../lib/image';
 import { fmt, suggestPrice } from '../lib/money';
 import { useToast } from '../components/Toast';
 import SafeImage from '../components/SafeImage';
+import PriceTag from '../components/PriceTag';
 
 const LETTER = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
@@ -16,8 +17,13 @@ const SIZES: Record<Category, string[]> = {
 };
 const BRANDS = ['Zara', 'H&M', 'Castro', 'Fox', "Levi's", 'Nike', 'Adidas', 'Mango', 'Renuar'];
 const MAX_IMAGES = 4;
-
-const input = 'tap w-full rounded-xl bg-white px-3 shadow-sm outline-none ring-1 ring-transparent focus:ring-primary';
+const STORY_MAX = 200;
+const STORY_HINTS = [
+  'קניתי לחתונה של אחותי, רקדתי בו כל הלילה',
+  'הלך איתי לשלוש הופעות ולטיול אחד בצפון',
+  'קיבלתי במתנה, ולא התאים לי. מחכה למישהו שיאהב אותו',
+  'היה לי בצבא, ועבר איתי הרבה בקרים',
+];
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -44,7 +50,16 @@ export default function Sell() {
   const [condition, setCondition] = useState<Condition>('טוב מאוד');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [story, setStory] = useState('');
+  const [hint, setHint] = useState(0);
   const [tried, setTried] = useState(false);
+
+  // The story box's placeholder cycles through examples while it's empty.
+  useEffect(() => {
+    if (story) return;
+    const t = setInterval(() => setHint((h) => (h + 1) % STORY_HINTS.length), 4000);
+    return () => clearInterval(t);
+  }, [story]);
 
   const suggested = suggestPrice(category, condition, brand);
   const priceNum = Number(price);
@@ -80,26 +95,26 @@ export default function Sell() {
     e.preventDefault();
     setTried(true);
     if (hasErrors) { show('יש לתקן את השדות המסומנים', 'error'); return; }
-    const id = listItem({ title: title.trim(), description: description.trim(), category, size, brand: brand.trim(), condition, price: priceNum, images });
-    show('הפריט פורסם! 🎉');
+    const id = listItem({ title: title.trim(), description: description.trim(), category, size, brand: brand.trim(), condition, price: priceNum, images, story: story.trim() || undefined });
+    show('הפריט עלה לקולב');
     nav(`/item/${id}`);
   };
 
   return (
     <form onSubmit={submit} className="space-y-4 p-4 pb-8" noValidate>
-      <h1 className="text-xl font-black">מכירת פריט</h1>
+      <h1 className="text-2xl">מכירת פריט</h1>
 
       <div>
         <div className="mb-1 text-sm font-bold">תמונות ({images.length}/{MAX_IMAGES})</div>
         <div className="grid grid-cols-4 gap-2">
           {images.map((src, n) => (
-            <div key={n} className="relative aspect-square overflow-hidden rounded-xl">
+            <div key={n} className="relative aspect-square bg-[#FFFEFA] p-0.5 shadow-soft">
               <img src={src} alt={`תמונה ${n + 1}`} className="h-full w-full object-cover" />
-              <button type="button" onClick={() => setImages((p) => p.filter((_, i) => i !== n))} aria-label={`הסר תמונה ${n + 1}`} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"><X size={14} /></button>
+              <button type="button" onClick={() => setImages((p) => p.filter((_, i) => i !== n))} aria-label={`הסר תמונה ${n + 1}`} className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-card"><X size={14} /></button>
             </div>
           ))}
           {images.length < MAX_IMAGES && (
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} aria-label="הוספת תמונה" className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-primary/40 bg-primary-soft text-xs text-primary">
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} aria-label="הוספת תמונה" className="flex aspect-square flex-col items-center justify-center gap-1 border-2 border-dashed border-ink/40 bg-kraft-soft text-xs font-bold text-ink">
               {busy ? <Loader2 className="animate-spin" size={22} /> : <ImagePlus size={22} />}
               {busy ? 'מכווץ…' : 'הוסף'}
             </button>
@@ -109,48 +124,56 @@ export default function Sell() {
         {err('images') && <span role="alert" className="mt-1 block text-xs text-bad">{err('images')}</span>}
       </div>
 
-      <Field label="כותרת" error={err('title')}><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="למשל: ג׳קט ג׳ינס קלאסי" className={input} /></Field>
+      <Field label="כותרת" error={err('title')}><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="למשל: ג׳קט ג׳ינס קלאסי" className="field" /></Field>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="קטגוריה">
-          <select value={category} onChange={(e) => { setCategory(e.target.value as Category); setSize(''); }} className={input}>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+          <select value={category} onChange={(e) => { setCategory(e.target.value as Category); setSize(''); }} className="field">{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
         </Field>
         <Field label="מידה" error={err('size')}>
-          <select value={size} onChange={(e) => setSize(e.target.value)} className={input}><option value="">בחר</option>{SIZES[category].map((s) => <option key={s}>{s}</option>)}</select>
+          <select value={size} onChange={(e) => setSize(e.target.value)} className="field"><option value="">בחר</option>{SIZES[category].map((s) => <option key={s}>{s}</option>)}</select>
         </Field>
         <Field label="מותג" error={err('brand')}>
-          <input list="brands" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Zara, Nike…" className={input} />
+          <input list="brands" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Zara, Nike…" className="field" />
           <datalist id="brands">{BRANDS.map((b) => <option key={b} value={b} />)}</datalist>
         </Field>
         <Field label="מצב">
-          <select value={condition} onChange={(e) => setCondition(e.target.value as Condition)} className={input}>{CONDITIONS.map((c) => <option key={c}>{c}</option>)}</select>
+          <select value={condition} onChange={(e) => setCondition(e.target.value as Condition)} className="field">{CONDITIONS.map((c) => <option key={c}>{c}</option>)}</select>
         </Field>
       </div>
 
       <Field label="מחיר (₪)" error={err('price')}>
-        <input type="number" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className={input} />
+        <input type="number" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className="field" />
       </Field>
-      <button type="button" onClick={() => setPrice(String(suggested))} className="tap flex w-full items-center justify-center gap-2 rounded-xl bg-escrow-soft px-3 text-sm font-medium text-escrow-dark">
+      <button type="button" onClick={() => setPrice(String(suggested))} className="btn btn-ghost w-full text-sm">
         <Lightbulb size={16} aria-hidden />מחיר מומלץ: {fmt(suggested)} · השתמש בו
       </button>
 
       <Field label="תיאור" error={err('description')}>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="מצב, גזרה, פגמים אם יש…" className={`${input} py-2`} />
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="מצב, גזרה, פגמים אם יש…" className="field" />
       </Field>
 
       <div>
-        <div className="mb-1 text-sm font-bold">תצוגה מקדימה</div>
-        <div className="w-44 overflow-hidden rounded-2xl bg-white shadow-soft" data-testid="preview">
-          <SafeImage src={images[0]} category={category} alt="תצוגה מקדימה" className="aspect-[4/5] w-full" />
-          <div className="space-y-0.5 p-3">
-            <div className="text-base font-black">{priceNum > 0 ? fmt(priceNum) : '₪—'}</div>
-            <div className="truncate text-sm">{title || 'כותרת הפריט'}</div>
+        <label className="block space-y-1">
+          <span className="text-sm font-bold">הסיפור של הבגד <span className="font-normal text-ink-soft">(לא חובה)</span></span>
+          <textarea data-testid="story" value={story} maxLength={STORY_MAX} onChange={(e) => setStory(e.target.value)} rows={3} placeholder={STORY_HINTS[hint]} className="field" />
+        </label>
+        <div className="mt-1 text-end text-xs text-ink-soft" dir="ltr">{story.length}/{STORY_MAX}</div>
+      </div>
+
+      <div>
+        <div className="mb-3 text-sm font-bold">תצוגה מקדימה</div>
+        <div className="relative w-44 pt-1" data-testid="preview">
+          <div className="bg-[#FFFEFA] p-1.5 shadow-soft"><SafeImage src={images[0]} category={category} alt="תצוגה מקדימה" w={400} className="aspect-[4/5] w-full" /></div>
+          <PriceTag price={priceNum > 0 ? priceNum : 0} />
+          <div className="space-y-0.5 px-1 pt-2">
+            <div className="truncate text-[15px] font-medium">{title || 'כותרת הפריט'}</div>
             <div className="text-xs text-ink-soft">{brand || 'מותג'} · מידה {size || '—'}</div>
           </div>
         </div>
       </div>
 
-      <button type="submit" disabled={busy} className="tap w-full rounded-2xl bg-primary py-3 text-base font-bold text-white hover:bg-primary-hover disabled:opacity-60">פרסם למכירה</button>
+      <button type="submit" disabled={busy} className="btn btn-primary w-full text-base">פרסם למכירה</button>
     </form>
   );
 }

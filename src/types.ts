@@ -32,6 +32,7 @@ export interface Item {
   createdAt: number;
   likes: UserId[];
   relisted?: boolean; // returned to sale after a refund
+  story?: string; // optional "story of the garment" (up to 200 chars)
 }
 
 export type OrderStatus = 'paid_escrow' | 'shipped' | 'delivered' | 'completed' | 'disputed' | 'refunded';
@@ -53,6 +54,7 @@ export interface Order {
   dispute?: { reason: string; details: string; photo?: string };
   rated?: boolean;
   rating?: { stars: number; comment: string };
+  thankYou?: string; // note the seller tucked into the parcel
 }
 
 export interface Notification {

@@ -16,9 +16,9 @@ const HOUR = 3600_000;
 export function createSeed(): AppData {
   const now = Date.now();
   const users: AppData['users'] = {
-    noa: { id: 'noa', address: 'הרצל 12, תל אביב', name: 'נועה', avatar: '🧑‍🎤', color: '#4A7360', role: 'קונה', city: 'תל אביב', rating: 4.9, ratingCount: 21, badges: [], wallet: { available: 800, pending: 0 } },
-    dani: { id: 'dani', address: 'מוריה 45, חיפה', name: 'דני', avatar: '🧔', color: '#2563EB', role: 'מוכר', city: 'חיפה', rating: 4.7, ratingCount: 38, badges: ['verified', 'fast_shipper'], wallet: { available: 150, pending: 120 } },
-    maya: { id: 'maya', address: 'עמק רפאים 8, ירושלים', name: 'מאיה', avatar: '👩‍🦰', color: '#DB2777', role: 'מוכרת', city: 'ירושלים', rating: 5.0, ratingCount: 64, badges: ['top_seller'], wallet: { available: 300, pending: 0 } },
+    noa: { id: 'noa', address: 'הרצל 12, תל אביב', name: 'נועה', avatar: '🧑‍🎤', color: '#4A5D3A', role: 'קונה', city: 'תל אביב', rating: 4.9, ratingCount: 21, badges: [], wallet: { available: 800, pending: 0 } },
+    dani: { id: 'dani', address: 'מוריה 45, חיפה', name: 'דני', avatar: '🧔', color: '#76562A', role: 'מוכר', city: 'חיפה', rating: 4.7, ratingCount: 38, badges: ['verified', 'fast_shipper'], wallet: { available: 150, pending: 120 } },
+    maya: { id: 'maya', address: 'עמק רפאים 8, ירושלים', name: 'מאיה', avatar: '👩‍🦰', color: '#8E1F1F', role: 'מוכרת', city: 'ירושלים', rating: 5.0, ratingCount: 64, badges: ['top_seller'], wallet: { available: 300, pending: 0 } },
   };
 
   const mk = (
@@ -46,6 +46,24 @@ export function createSeed(): AppData {
     mk(14, 'dani', 'חולצת טי אוברסייז', 'חולצות', 'L', 'Nike', 'כמו חדש', 120, '1503341504253-dff4815485f1', 'חולצת טי אוברסייז רחבה ונעימה, במצב כמו חדש.', 'sold'),
   ];
 
+  const STORIES: Record<number, string> = {
+    1: 'קניתי אותו בשוק הפשפשים ביפו לפני שבע שנים. עבר איתי טרמפים, הופעות וגג בחיפה. הוא מחכה למישהו שייקח אותו ליותר מסיבות.',
+    2: 'לבשתי אותה לחתונה של בת דודה בגליל ורקדתי בה שעתיים בלי הפסקה. מאז היא יושבת בארון ומתגעגעת לקיץ.',
+    3: 'רצתי בהן את חצי המרתון הראשון שלי, בטבריה. הסוליה עוד מחזיקה ויש עליהן קצת אבק משביל ישראל. הן מחפשות עוד כמה קילומטרים.',
+    4: 'קניתי שלוש כאלה במבצע, ובסוף לבשתי רק שתיים. זו עדיין עם התווית ומחכה לתור שלה.',
+    5: 'ג׳ינס של יום-יום. ויתרתי עליהם כי הצטמצמתי במידה, אבל הם עדיין מהדברים הכי נוחים שהיו לי.',
+    6: 'שרד איתי חורף שלם בירושלים. חם בטירוף, קליל כמעט כמו סוודר, ולא נשר ממנו אפילו נוצה אחת.',
+    7: 'מקלחת, ספה, קפוצ׳ון. זה כל הסיפור. יש לו כבר צורה של השרוולים שלי, וככה הוא הכי נוח.',
+    8: 'השמלה שלבשתי לכל אירוע רשמי בשנתיים האחרונות. לא צריך להתאמץ איתה, היא פשוט יושבת טוב. מגיע לה ערב חדש.',
+    9: 'קניתי אותן לחתונה לפני שנה ולבשתי פעמיים בלבד. נקיות, בלי פסים בצדדים, כאילו עוד לא התחילו ללכת.',
+    10: 'אחד התיקים האלה שנכנס אליהם הכול ועדיין נראים מסודרים. הרצועה מתכווננת, ואפשר לשאת אותו משני הצדדים.',
+    11: 'פסים של מלחים, אבל בלי הים. מתאימה למי שרוצה להיראות מסודר גם ביום שהוא לא.',
+    12: 'הקנייה הכי טובה שלי בשנה שעברה. הכיסים החזיקו קלמר, מפתחות וסנדוויץ׳. לא ראיתי אותם בארון כבר חודש.',
+    13: 'קניתי אותו בנסיעה לצפון בחורף שעבר ושכחתי להחזיר לארון. רך, חם, ומספיק ארוך כדי לעטוף פעמיים.',
+    14: 'חולצה לריצת בוקר: אוורירית, רחבה ולא נדבקת. עברתי לריצות ערב והיא נשארה בלי עבודה.',
+  };
+  items.forEach((it, i) => { it.story = STORIES[i + 1]; });
+
   const sold = items[13];
   const t = calcTotals(sold.price);
   const order: Order = {
@@ -57,6 +75,7 @@ export function createSeed(): AppData {
       { status: 'delivered', at: now - 2 * HOUR },
     ],
     autoReleaseAt: now + 46 * HOUR,
+    thankYou: 'תודה שנתת לחולצה הזאת בית חדש! היא ראתה המון בקרים טובים, שיהיו לה עוד. — דני',
   };
 
   const notifications: Notification[] = [

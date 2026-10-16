@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { EmptyArt } from './Art';
 
 interface State { failed: boolean }
 
@@ -19,13 +20,13 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
   render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div dir="rtl" lang="he" className="flex min-h-screen items-center justify-center bg-[#EEF1EC] px-6 font-sans">
-        <div className="w-full max-w-[380px] rounded-3xl bg-white p-6 text-center shadow-soft">
-          <div className="text-5xl" aria-hidden>🙈</div>
+      <div dir="rtl" lang="he" className="paper flex min-h-screen items-center justify-center px-6 font-sans">
+        <div className="w-full max-w-[380px] rounded-lg bg-card p-6 text-center shadow-lift">
+          <div className="flex justify-center"><EmptyArt kind="hanger" /></div>
           <h1 className="mt-2 text-2xl font-black">אופס, משהו השתבש</h1>
           <p className="mt-2 text-sm text-ink-soft">קרתה שגיאה לא צפויה. אפשר לאפס את הדמו ולהתחיל מחדש.</p>
-          <button onClick={this.resetDemo} className="tap mt-5 w-full rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary-hover">איפוס דמו</button>
-          <button onClick={() => window.location.reload()} className="tap mt-2 w-full rounded-2xl bg-gray-100 py-3 text-sm font-bold">נסה שוב</button>
+          <button onClick={this.resetDemo} className="btn btn-primary mt-5 w-full">איפוס דמו</button>
+          <button onClick={() => window.location.reload()} className="btn btn-ghost mt-3 w-full text-sm">נסה שוב</button>
         </div>
       </div>
     );

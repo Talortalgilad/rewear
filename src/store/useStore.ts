@@ -42,7 +42,7 @@ interface State extends AppData {
   topUp: () => void;
   listItem: (data: Omit<Item, 'id' | 'sellerId' | 'status' | 'createdAt' | 'likes'>) => string;
   buyItem: (itemId: string, address: string) => { ok: true; orderId: string } | { ok: false; error: string };
-  markShipped: (orderId: string) => Res;
+  markShipped: (orderId: string, thankYou?: string) => Res;
   markDelivered: (orderId: string) => Res;
   releasePayment: (orderId: string, auto?: boolean) => Res;
   openDispute: (orderId: string, d: { reason: string; details: string; photo?: string }) => Res;
@@ -145,7 +145,7 @@ export const useStore = create<State>()(
         return { ok: true, orderId: order.id };
       },
 
-      markShipped: (orderId) => {
+      markShipped: (orderId, thankYou) => {
         const s = get();
         const o = s.orders.find((x) => x.id === orderId);
         if (!o) return fail('ההזמנה לא נמצאה');
@@ -155,9 +155,9 @@ export const useStore = create<State>()(
         const tracking = `RW${Math.floor(10_000_000 + Math.random() * 90_000_000)}`;
         const title = s.items.find((i) => i.id === o.itemId)?.title ?? 'הפריט';
         set({
-          orders: s.orders.map((x) => (x.id === orderId ? advance(x, 'shipped', now, tracking, { trackingNumber: tracking }) : x)),
+          orders: s.orders.map((x) => (x.id === orderId ? advance(x, 'shipped', now, tracking, { trackingNumber: tracking, thankYou: thankYou?.trim() ? thankYou.trim().slice(0, 160) : undefined }) : x)),
           guide: s.guide.orderId === orderId ? mark(s.guide, 2) : s.guide,
-          notifications: [note(o.buyerId, `"${title}" נשלח אליך. מספר מעקב: ${tracking}`, o.id, now), ...s.notifications],
+          notifications: [note(o.buyerId, `${s.users[o.sellerId].name} ארז ושלח את "${title}". מספר מעקב: ${tracking}`, o.id, now), ...s.notifications],
         });
         return { ok: true };
       },
@@ -190,7 +190,7 @@ export const useStore = create<State>()(
         const seller = s.users[o.sellerId];
         const title = s.items.find((i) => i.id === o.itemId)?.title ?? 'הפריט';
         const tx: Transaction = { id: uid(), userId: seller.id, type: 'income', amount: o.itemPrice, text: `הכנסה: ${title}`, orderId: o.id, at: now };
-        const notes = [note(seller.id, `💸 ₪${o.itemPrice.toLocaleString('he-IL')} שוחררו לארנק שלך עבור "${title}"${auto ? ' (שחרור אוטומטי)' : ''}`, o.id, now)];
+        const notes = [note(seller.id, `₪${o.itemPrice.toLocaleString('he-IL')} נכנסו לארנק שלך עבור "${title}"${auto ? ' (שחרור אוטומטי)' : ''}`, o.id, now)];
         if (auto) notes.push(note(o.buyerId, `התשלום עבור "${title}" שוחרר אוטומטית למוכר אחרי 48 שעות.`, o.id, now));
         set({
           users: { ...s.users, [seller.id]: { ...seller, wallet: { available: seller.wallet.available + o.itemPrice, pending: seller.wallet.pending - o.itemPrice } } },
@@ -277,7 +277,12 @@ export const useStore = create<State>()(
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined;
         const ok = p && p.users && p.users.noa && p.users.noa.address && Array.isArray(p.items) && Array.isArray(p.orders) && Array.isArray(p.notifications) && Array.isArray(p.transactions) && p.currentUserId && p.users[p.currentUserId];
-        return ok ? { ...current, ...p } : current;
+        if (!ok) return current;
+        // Data saved before stories/notes existed: borrow them from the seed by id.
+        const seed = createSeed();
+        const items = (p.items ?? []).map((i) => (i.story === undefined && seed.items.find((x) => x.id === i.id)?.story ? { ...i, story: seed.items.find((x) => x.id === i.id)!.story } : i));
+        const orders = (p.orders ?? []).map((o) => (o.id === 'RW-10234' && o.thankYou === undefined ? { ...o, thankYou: seed.orders[0].thankYou } : o));
+        return { ...current, ...p, items, orders };
       },
       partialize: (s) => ({ users: s.users, items: s.items, orders: s.orders, notifications: s.notifications, transactions: s.transactions, orderSeq: s.orderSeq, currentUserId: s.currentUserId, guide: s.guide, onboardingSeen: s.onboardingSeen }) as State,
     },

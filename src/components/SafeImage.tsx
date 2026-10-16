@@ -7,14 +7,14 @@ const icons = { 'חולצות': Shirt, 'מכנסיים': Layers, 'שמלות': S
 
 interface Props { src?: string; category: Category; alt: string; className?: string; w?: number; priority?: boolean }
 
-// Image with a soft gradient + category icon fallback (never a broken-image icon).
+// Image with a flat kraft-paper fallback + category icon (never a broken-image icon).
 export default function SafeImage({ src, category, alt, className = '', w = 400, priority = false }: Props) {
   const [failed, setFailed] = useState(false);
   const Icon = icons[category];
   if (!src || failed) {
     return (
-      <div role="img" aria-label={alt} className={`flex items-center justify-center bg-gradient-to-br from-primary-soft via-[#F3EFE6] to-escrow-soft ${className}`}>
-        <Icon size={40} className="text-primary/60" aria-hidden />
+      <div role="img" aria-label={alt} className={`flex items-center justify-center bg-kraft-soft ${className}`} style={{ backgroundImage: 'radial-gradient(#C9A87755 1px, transparent 1.2px)', backgroundSize: '9px 9px' }}>
+        <Icon size={40} className="text-kraft-dark" aria-hidden />
       </div>
     );
   }

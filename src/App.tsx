@@ -36,7 +36,7 @@ export default function App() {
   const onboardingSeen = useStore((s) => s.onboardingSeen);
   const hideNav = pathname.startsWith('/item/') || pathname.startsWith('/checkout/');
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[480px] bg-bg pb-32 shadow-soft md:my-6 md:min-h-[calc(100vh-3rem)] md:rounded-3xl">
+    <div className="mx-auto min-h-screen w-full max-w-[480px] paper pb-32 shadow-lift md:my-6 md:min-h-[calc(100vh-3rem)] md:rounded-md">
       <Header />
       <main>
         <PageTransition>
